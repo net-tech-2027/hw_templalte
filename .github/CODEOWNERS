@@ -1,11 +1,9 @@
 # CODEOWNERS: обязательные ревьюеры для защищённых частей шаблона.
-# Замените @your-org/teachers на реального пользователя или команду GitHub.
-# Подробности: https://docs.github.com/en/repositories/managing-a-repository/customizing-your-repository/about-code-owners
 
-/include/          @your-org/teachers
-/tests/            @your-org/teachers
-/CMakeLists.txt    @your-org/teachers
-/CMakePresets.json @your-org/teachers
-/.github/          @your-org/teachers
-/docs/             @your-org/teachers
-/README.md         @your-org/teachers
+/include/          @net-tech-2027/Pr0meTheuSS
+/tests/            @net-tech-2027/Pr0meTheuSS
+/CMakeLists.txt    @net-tech-2027/Pr0meTheuSS
+/CMakePresets.json @net-tech-2027/Pr0meTheuSS
+/.github/          @net-tech-2027/Pr0meTheuSS
+/docs/             @net-tech-2027/Pr0meTheuSS
+/README.md         @net-tech-2027/Pr0meTheuSS
