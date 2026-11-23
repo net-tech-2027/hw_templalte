@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Две ветки не должны показывать «зелёный» параллельно: статус всегда
+# относится к последнему запущенному пайплайну ветки.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # -------------------------------------------------------------------------
+  # 1. Защита преподавательских файлов: студент не имеет права менять
+  #    интерфейсы, тесты и конфигурацию сборки.
+  # -------------------------------------------------------------------------
+  protected-files:
+    name: protected files untouched
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if protected files were modified
+        run: |
+          BASE_REF="${{ github.base_ref || 'main' }}"
+          git fetch origin "${BASE_REF}"
+          CHANGED="$(git diff --name-only "origin/${BASE_REF}...HEAD" -- \
+            include tests docs \
+            CMakeLists.txt CMakePresets.json \
+            .github CODEOWNERS README.md || true)"
+          if [ -n "${CHANGED}" ]; then
+            echo "::error::Изменены защищённые файлы — MR не может быть принят:"
+            echo "${CHANGED}" | sed 's/^/  /'
+            exit 1
+          fi
+
+  # -------------------------------------------------------------------------
+  # 2. Сборка + прогон тестов (ctest) двумя компиляторами.
+  # -------------------------------------------------------------------------
+  build-and-test:
+    name: build & ctest (${{ matrix.compiler.cxx }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - { c: gcc,   cxx: g++ }
+          - { c: clang, cxx: clang++ }
+    env:
+      CC:  ${{ matrix.compiler.c }}
+      CXX: ${{ matrix.compiler.cxx }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset debug
+
+      - name: Build
+        run: cmake --build --preset debug --parallel
+
+      - name: Test
+        run: ctest --preset debug
+
+  # -------------------------------------------------------------------------
+  # 3. Сборка и прогон тестов под санитайзерами ASan + UBSan.
+  # -------------------------------------------------------------------------
+  sanitizers:
+    name: ASan + UBSan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset asan
+
+      - name: Build
+        run: cmake --build --preset asan --parallel
+
+      - name: Test
+        run: ctest --preset asan
